@@ -14,10 +14,39 @@
     canvas {
       display: block;
     }
+
+    #center-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #222;
+      pointer-events: auto;
+      z-index: 10;
+      user-select: none;
+    }
+
+    #eye-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      pointer-events: none;
+    }
   </style>
 </head>
 
 <body>
+  <div id="center-text">2024-12-03,22:27</div>
+  <div id="eye-container">
+    <svg id="eye-svg" width="80" height="80" viewBox="0 0 80 80">
+      <ellipse cx="40" cy="40" rx="35" ry="30" fill="#fff" stroke="#222" stroke-width="3" />
+      <circle id="pupil" cx="40" cy="40" r="10" fill="#222" />
+    </svg>
+  </div>
   <!-- Matter.js 라이브러리 로드 -->
   <script src="../build/matter.js"></script>
   <!-- Ball Pool 예제 코드 직접 삽입 -->
@@ -135,11 +164,146 @@
       World.add(world, mouseConstraint);
     });
 
-    // 마우스 프레스 시 사각형 생성
+    // 마우스 프레스 시 사각형 생성 → 마우스 누르고 있는 동안 계속 생성
+    var spawnIntervalId = null;
+
+    function startSpawningRects() {
+      if (spawnIntervalId) return; // 이미 실행 중이면 중복 실행 방지
+      spawnIntervalId = setInterval(function () {
+        var rect = createRandomRect();
+        rects.push(rect);
+        World.add(world, rect);
+      }, 100); // 100ms마다 생성 (원하는 속도로 조절)
+    }
+
+    function stopSpawningRects() {
+      clearInterval(spawnIntervalId);
+      spawnIntervalId = null;
+    }
+
     render.canvas.addEventListener('mousedown', function (event) {
-      var rect = createRandomRect();
-      rects.push(rect);
-      World.add(world, rect);
+      startSpawningRects();
+    });
+
+    render.canvas.addEventListener('mouseup', function (event) {
+      stopSpawningRects();
+    });
+
+    render.canvas.addEventListener('mouseleave', function (event) {
+      stopSpawningRects();
+    });
+
+    function createTextBodies(text, fontSize, fontFamily) {
+      // 1. 임시 캔버스에 글자 그림
+      var tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 400;
+      tempCanvas.height = 100;
+      var ctx = tempCanvas.getContext('2d');
+      ctx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.font = fontSize + 'px ' + fontFamily;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#000';
+      ctx.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);
+
+      // 2. 픽셀 데이터 읽기
+      var imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+      var bodies = [];
+      var step = 8; // 점 간격(조밀할수록 더 글자 모양에 가까움, 성능과 트레이드오프)
+      for (var y = 0; y < tempCanvas.height; y += step) {
+        for (var x = 0; x < tempCanvas.width; x += step) {
+          var idx = (y * tempCanvas.width + x) * 4;
+          if (imageData.data[idx + 3] > 128) { // 알파값이 충분히 크면
+            // 월드 중앙 기준으로 위치 조정
+            var worldX = window.innerWidth / 2 - tempCanvas.width / 2 + x;
+            var worldY = window.innerHeight / 2 - tempCanvas.height / 2 + y;
+            bodies.push(Bodies.circle(worldX, worldY, step / 2, {
+              isStatic: true,
+              render: {
+                fillStyle: 'rgba(0,0,0,0)'
+              }
+            }));
+          }
+        }
+      }
+      return bodies;
+    }
+
+    // 날짜 상태 및 포맷 함수
+    var currentDate = new Date(2024, 11, 3, 22, 27); // 11=12월 (JS는 0부터 시작)
+    function formatDate(date) {
+      var y = date.getFullYear();
+      var m = (date.getMonth() + 1).toString().padStart(2, '0');
+      var d = date.getDate().toString().padStart(2, '0');
+      var h = date.getHours().toString().padStart(2, '0');
+      var min = date.getMinutes().toString().padStart(2, '0');
+      return `${y}-${m}-${d},${h}:${min}`;
+    }
+
+    // 텍스트와 물리 바디 갱신 함수
+    function updateDateTextAndBodies() {
+      document.getElementById('center-text').textContent = formatDate(currentDate);
+      if (window.textBodies) World.remove(world, window.textBodies);
+      window.textBodies = createTextBodies(formatDate(currentDate), 48, 'Arial');
+      World.add(world, window.textBodies);
+    }
+
+    // 초기화
+    updateDateTextAndBodies();
+
+    // 클릭/프레스 이벤트 처리
+    var pressIntervalId = null;
+
+    function addOneDay() {
+      currentDate.setDate(currentDate.getDate() + 1);
+      updateDateTextAndBodies();
+    }
+    var centerTextDiv = document.getElementById('center-text');
+    // 눈 흔들림 인터랙션
+    var pupil = document.getElementById('pupil');
+    var eyeShakeInterval = null;
+    var pupilOrigin = {
+      x: 40,
+      y: 40
+    };
+
+    function startEyeShake() {
+      if (eyeShakeInterval) return;
+      eyeShakeInterval = setInterval(function () {
+        var dx = (Math.random() - 0.5) * 10;
+        var dy = (Math.random() - 0.5) * 10;
+        pupil.setAttribute('cx', pupilOrigin.x + dx);
+        pupil.setAttribute('cy', pupilOrigin.y + dy);
+      }, 40);
+    }
+
+    function stopEyeShake() {
+      clearInterval(eyeShakeInterval);
+      eyeShakeInterval = null;
+      pupil.setAttribute('cx', pupilOrigin.x);
+      pupil.setAttribute('cy', pupilOrigin.y);
+    }
+    // 기존 centerTextDiv 이벤트 리스너 제거
+    // centerTextDiv.addEventListener('mousedown', ...);
+    // centerTextDiv.addEventListener('mouseup', ...);
+    // centerTextDiv.addEventListener('mouseleave', ...);
+
+    // 화면 전체에서 인터렉션 동작
+    document.body.addEventListener('mousedown', function (e) {
+      startEyeShake();
+      addOneDay();
+      if (pressIntervalId) return;
+      pressIntervalId = setInterval(addOneDay, 120);
+    });
+    document.body.addEventListener('mouseup', function (e) {
+      stopEyeShake();
+      clearInterval(pressIntervalId);
+      pressIntervalId = null;
+    });
+    document.body.addEventListener('mouseleave', function (e) {
+      stopEyeShake();
+      clearInterval(pressIntervalId);
+      pressIntervalId = null;
     });
   </script>
 </body>
