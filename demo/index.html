@@ -3,82 +3,145 @@
 
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport"
-    content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,minimal-ui">
-  <meta name="theme-color" content="#000000">
-  <meta name="msapplication-navbutton-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="robots" content="noindex">
-  <title>Matter.js Demo</title>
-
-  <style type="text/css">
-    * {
-      box-sizing: border-box;
-    }
-
+  <title>Matter.js Ball Pool Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <style>
     body {
       margin: 0;
       padding: 0;
     }
 
-    .matter-btn-compare.matter-btn {
-      font-size: 18px;
-      text-align: center;
-      line-height: 32px;
-    }
-
-    .matter-js-compare-build.matter-demo {
-      position: absolute;
-      background: none;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      pointer-events: none;
-    }
-
-    .matter-js-compare-build.matter-demo .matter-header-outer {
-      display: none;
-    }
-
-    .matter-js.dev.comparing.matter-demo canvas {
-      background: transparent !important;
-      z-index: 20;
-    }
-
-    .matter-js-compare-build.matter-demo canvas {
-      opacity: 0.5;
-      background: transparent !important;
-      z-index: 15 !important;
-    }
-
-    @media only screen and (min-width: 1300px) {
-
-      /* reduce hit testing when using matter-tools */
-      .matter-demo canvas {
-        position: relative;
-        z-index: 20;
-      }
-
-      .matter-js-compare-build.matter-demo canvas {
-        position: relative;
-        z-index: 15;
-      }
+    canvas {
+      display: block;
     }
   </style>
 </head>
 
 <body>
-  <script src="./js/matter-demo.main.cf6d09.min.js"></script>
-  <script src="./js/matter-demo.matter-tools.0f82d2.min.js"></script>
-  <script src="./js/matter-demo.matter-wrap.f14474.min.js"></script>
-  <script src="./js/matter-demo.pathseg.f137cc.min.js"></script>
-  <script src="./js/matter-demo.poly-decomp.6b3373.min.js"></script>
-  <script src="./js/matter-demo.01bd65.min.js"></script>
-  <script src="./js/ballPool.js"></script>
+  <!-- Matter.js 라이브러리 로드 -->
+  <script src="../build/matter.js"></script>
+  <!-- Ball Pool 예제 코드 직접 삽입 -->
+  <script>
+    // Matter.js 네임스페이스 가져오기
+    var Engine = Matter.Engine,
+      Render = Matter.Render,
+      Runner = Matter.Runner,
+      Composites = Matter.Composites,
+      Common = Matter.Common,
+      MouseConstraint = Matter.MouseConstraint,
+      Mouse = Matter.Mouse,
+      World = Matter.World,
+      Bodies = Matter.Bodies;
+
+    // 엔진 생성
+    var engine = Engine.create(),
+      world = engine.world;
+
+    // 렌더러 생성
+    var render = Render.create({
+      element: document.body,
+      engine: engine,
+      options: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false,
+        background: '#fff'
+      }
+    });
+
+    Render.run(render);
+
+    // 러너 생성
+    var runner = Runner.create();
+    Runner.run(runner, engine);
+
+    // 벽 생성 함수 (상단 벽 없음, 나머지는 화면에 붙게)
+    function createWalls() {
+      return [
+        Bodies.rectangle(window.innerWidth / 2, window.innerHeight, window.innerWidth, 50, {
+          isStatic: true
+        }), // 하단
+        Bodies.rectangle(window.innerWidth, window.innerHeight / 2, 50, window.innerHeight, {
+          isStatic: true
+        }), // 우측
+        Bodies.rectangle(0, window.innerHeight / 2, 50, window.innerHeight, {
+          isStatic: true
+        }) // 좌측
+      ];
+    }
+
+    // 랜덤 위치에 사각형 생성 함수 (항상 화면 바깥 상단에서 생성)
+    function createRandomRect() {
+      var size = 40;
+      var x = Common.random(size + 10, window.innerWidth - size - 10);
+      var y = -size; // 화면 바깥 상단
+      var isBlack = Common.random() > 0.5;
+      return Bodies.rectangle(x, y, size, size, {
+        restitution: 0.9,
+        friction: 0.005,
+        density: 0.001,
+        render: {
+          fillStyle: isBlack ? '#000' : '#fff',
+          strokeStyle: '#222',
+          lineWidth: 1
+        }
+      });
+    }
+
+    // 초기 사각형 여러 개 생성
+    function createInitialRects(count) {
+      var rects = [];
+      for (var i = 0; i < count; i++) {
+        rects.push(createRandomRect());
+      }
+      return rects;
+    }
+
+    var walls = createWalls();
+    var rects = createInitialRects(20);
+
+    World.add(world, walls);
+    World.add(world, rects);
+
+    // 마우스 컨트롤 추가
+    var mouse = Mouse.create(render.canvas),
+      mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+          stiffness: 0.2,
+          render: {
+            visible: false
+          }
+        }
+      });
+
+    World.add(world, mouseConstraint);
+    render.mouse = mouse;
+
+    // 반응형 리사이즈
+    window.addEventListener('resize', function () {
+      render.options.width = window.innerWidth;
+      render.options.height = window.innerHeight;
+      render.canvas.width = window.innerWidth;
+      render.canvas.height = window.innerHeight;
+
+      // 월드에서 기존 벽, 사각형, 마우스 컨스트레인트 제거
+      World.clear(world, false);
+
+      // 새 벽, 기존 사각형, 마우스 컨스트레인트 추가
+      walls = createWalls();
+      World.add(world, walls);
+      World.add(world, rects);
+      World.add(world, mouseConstraint);
+    });
+
+    // 마우스 프레스 시 사각형 생성
+    render.canvas.addEventListener('mousedown', function (event) {
+      var rect = createRandomRect();
+      rects.push(rect);
+      World.add(world, rect);
+    });
+  </script>
 </body>
 
 </html>
