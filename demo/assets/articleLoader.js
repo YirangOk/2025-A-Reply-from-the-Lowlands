@@ -33,6 +33,7 @@ function nextArticle() {
   if (clip) {
     clip.textContent = art.title + '↵';
     const cw = window.innerWidth - (document.getElementById('article-list')?.offsetWidth || 0) - 40;
+    clip.style.width = cw + 'px';
     clip.style.maxWidth = cw + 'px';
     clip.style.whiteSpace = 'normal';
     clip.style.overflowWrap = 'anywhere';
