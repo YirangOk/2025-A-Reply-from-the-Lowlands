@@ -1,0 +1,245 @@
+@font-face {
+    font-family: "Happiness-Sans-Regular";
+    src: url("../fonts/Happiness-Sans-Regular.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: "Happiness-Sans-Regular", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+    letter-spacing: -0.02em;
+    margin: 0;
+    padding: 0;
+    background: #d5dedd;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    z-index: 2;
+}
+
+#center-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #222;
+    pointer-events: auto;
+    z-index: 10;
+    user-select: none;
+    transition: left 0.5s, top 0.5s, transform 0.5s;
+}
+
+.eye-container {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    pointer-events: none;
+}
+
+#eye-left {
+    left: 0;
+}
+
+#eye-right {
+    right: 0;
+}
+
+.eye {
+    position: fixed;
+    top: 50%;
+    width: 320px;
+    height: 260px;
+    transform: translateY(-50%);
+    z-index: 20;
+    pointer-events: none;
+}
+
+.eye-left {
+    left: 0;
+}
+
+.eye-right {
+    right: 0;
+}
+
+.eye-outline {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 320px;
+    height: 260px;
+    border-radius: 50% / 45%;
+    border: 18px solid #aebab8;
+    box-sizing: border-box;
+}
+
+.eye-pupil {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 90px;
+    height: 90px;
+    background: none;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.eye-dot {
+    position: absolute;
+    background: #aebab8;
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.eye-left .dot1,
+.eye-right .dot1 {
+    width: 18px;
+    height: 18px;
+    left: 60px;
+    top: 170px;
+}
+
+.eye-left .dot2,
+.eye-right .dot2 {
+    width: 12px;
+    height: 12px;
+    left: 180px;
+    top: 200px;
+    opacity: 0.5;
+}
+
+.eye-left .dot3,
+.eye-right .dot3 {
+    width: 8px;
+    height: 8px;
+    left: 220px;
+    top: 60px;
+    opacity: 0.5;
+}
+
+.clip-text-container {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.clip-text {
+    position: absolute;
+    top: 0;
+    font-size: 13vw;
+    font-weight: bold;
+    color: #aebab8;
+    text-align: left;
+    word-break: break-all;
+    line-height: 1-vw;
+    max-width: 90vw;
+    z-index: 2;
+    font-family: "Happiness-Sans-Regular", sans-serif;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    /* CSS3 권장 */
+}
+
+.clip-pupil {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 90px;
+    height: 90px;
+    background: none;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+    background-color: #222;
+    /* box-shadow: 0 0 30px #001AFF88; */
+}
+
+.clip-bg {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: none;
+    z-index: 1;
+    clip-path: circle(20vw at 50vw 50vh);
+    -webkit-clip-path: circle(20vw at 50vw 50vh);
+    transition: clip-path 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+@media (max-width: 600px) {
+    .clip-bg {
+        clip-path: circle(40vw at 50vw 50vh);
+        -webkit-clip-path: circle(40vw at 50vw 50vh);
+    }
+}
+
+.article-list {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 28vw;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 10px 14px;
+    box-sizing: border-box;
+    font-family: "Happiness-Sans-Regular", sans-serif;
+    font-size: 14px;
+    color: #aebab8;
+    background: #d5dedd;
+    line-height: 1.4;
+    z-index: 1;
+    /* box-shadow: -2px 0 4px rgba(0, 0, 0, 0.2); */
+}
+
+.article-item {
+    margin-bottom: 12px;
+}
+
+.article-item h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+}
+
+.article-item .summary {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    display: block;
+    max-width: 100%;
+}
+
+.article-item .meta {
+    font-size: 12px;
+    color: #aebab8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.indicator {
+    font-size: 12px;
+}
