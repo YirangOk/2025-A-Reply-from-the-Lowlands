@@ -39,13 +39,15 @@
       element: document.body,
       engine: engine,
       options: {
-        width: window.innerWidth - getSidebarWidth(),
+        width: window.innerWidth,
         height: window.innerHeight,
         wireframes: false,
         background: 'transparent' // 완전 투명
       }
     });
 
+    // Ensure canvas style width matches computed width
+    render.canvas.style.width = render.options.width + 'px';
     Render.run(render);
 
     // 러너 생성
@@ -54,7 +56,7 @@
 
     // 벽 생성 함수 (상단 벽 없음, 나머지는 화면에 붙게)
     function createWalls() {
-      const w=window.innerWidth-getSidebarWidth();
+      const w=window.innerWidth;
       return [
         Bodies.rectangle(w/2, window.innerHeight, w, 20, {
           isStatic: true,
@@ -96,7 +98,7 @@
       ctx.font = '600 23px "Happiness-Sans-Regular", sans-serif';
       var textWidth = ctx.measureText(word).width; // 패딩 없음
       var textHeight = 23; // 폰트 사이즈와 동일
-      var canvasWidth = window.innerWidth - getSidebarWidth();
+      var canvasWidth = window.innerWidth;
       var x = Common.random(textWidth / 2 + 10, canvasWidth - textWidth / 2 - 10);
       var y = -textHeight;
       var color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
@@ -151,10 +153,11 @@
 
     // 반응형 리사이즈
     window.addEventListener('resize', function () {
-      render.options.width = window.innerWidth - getSidebarWidth();
+      render.options.width = window.innerWidth;
       render.options.height = window.innerHeight;
       render.canvas.width = render.options.width;
       render.canvas.height = window.innerHeight;
+      render.canvas.style.width = render.options.width + 'px';
 
       // 월드에서 기존 벽, 사각형, 마우스 컨스트레인트 제거
       World.clear(world, false);

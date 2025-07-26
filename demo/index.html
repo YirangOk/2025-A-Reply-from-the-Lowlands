@@ -6,20 +6,7 @@
   <title>Matter.js Ball Pool Demo</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <link rel="stylesheet" href="./assets/style.css">
-  <style>
-    canvas {
-      display: block;
-      position: fixed;
-      left: 0;
-      top: 0;
-      z-index: 3;
-      pointer-events: auto;
-    }
-
-    .clip-bg {
-      z-index: 1;
-    }
-  </style>
+  <!-- Styles moved to assets/style.css -->
 </head>
 <script>
   (function (d) {
@@ -53,6 +40,9 @@
 </script>
 
 <body>
+  <div id="menu-bar"><span id="menu-about">About</span></div>
+  <div id="restart-overlay">Restart</div>
+  <div id="press-overlay">Press</div>
   <div id="center-text">2024-12-03,22:27</div>
   <div class="clip-bg" id="clip-bg">
     <div class="clip-text" id="clip-text">
@@ -66,6 +56,19 @@
   <script src="./assets/datePhysics.js"></script>
   <script src="./assets/articleLoader.js"></script>
   <script>
+    // Press overlay fade out on first interaction
+    var pressOverlay = document.getElementById('press-overlay');
+    if (pressOverlay) {
+      var hidePressOverlay = function () {
+        pressOverlay.classList.add('fade-out');
+        if (window.fadeInDate) window.fadeInDate();
+        setTimeout(function () {
+          pressOverlay.style.display = 'none';
+        }, 200);
+        document.body.removeEventListener('mousedown', hidePressOverlay);
+      };
+      document.body.addEventListener('mousedown', hidePressOverlay);
+    }
     // 날짜와 클리핑 마스크 인터랙션 + 기사 변경
     var pressIntervalId = null;
     document.body.addEventListener('mousedown', function (e) {
@@ -91,6 +94,58 @@
       clearInterval(pressIntervalId);
       pressIntervalId = null;
     });
+
+    // ------------------ Inactivity Restart ------------------
+    (function () {
+      var restartOverlay = document.getElementById('restart-overlay');
+
+      function showRestart() {
+        restartOverlay.style.display = 'block';
+      }
+
+      function resetTimer() {
+        restartOverlay.style.display = 'none';
+        clearTimeout(window.__idleTimer);
+        window.__idleTimer = setTimeout(showRestart, 30 * 60 * 1000);
+      }
+      ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(function (ev) {
+        document.addEventListener(ev, resetTimer, {
+          passive: true
+        });
+      });
+      resetTimer();
+      restartOverlay.addEventListener('click', function () {
+        location.reload();
+      });
+    })();
+
+    // ------------------ About Window ------------------
+    (function () {
+      var aboutBtn = document.getElementById('menu-about');
+      if (!aboutBtn) return;
+      aboutBtn.addEventListener('click', function () {
+        if (document.getElementById('about-window')) return;
+        var aw = document.createElement('div');
+        aw.id = 'about-window';
+        aw.className = 'about-window';
+        aw.innerHTML =
+          `<div class="window-bar"><span class="win-btn red"></span><span class="win-btn yellow"></span><span class="win-btn green"></span></div><div class="about-content"><h2>About</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p><p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p></div>`;
+        document.body.appendChild(aw);
+        aw.querySelector('.win-btn.red').addEventListener('click', function (e) {
+          e.stopPropagation();
+          aw.remove();
+        });
+        aw.querySelector('.win-btn.yellow').addEventListener('click', function (e) {
+          e.stopPropagation();
+          aw.style.display = 'none';
+        });
+        aw.querySelector('.win-btn.green').addEventListener('click', function (e) {
+          e.stopPropagation();
+          aw.style.display = 'block';
+        });
+      });
+    })();
+    // ----------------------------------------------------
   </script>
 </body>
 

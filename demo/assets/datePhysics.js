@@ -5,9 +5,7 @@ function formatDate(date) {
   var y = date.getFullYear();
   var m = (date.getMonth() + 1).toString().padStart(2, '0');
   var d = date.getDate().toString().padStart(2, '0');
-  var h = date.getHours().toString().padStart(2, '0');
-  var min = date.getMinutes().toString().padStart(2, '0');
-  return `${y}-${m}-${d},${h}:${min}`;
+  return `${y}-${m}-${d}`;
 }
 
 // 날짜 HTML 요소 생성 및 스타일 적용
@@ -20,9 +18,10 @@ if (!dateDiv) {
 dateDiv.style.position = 'fixed';
 dateDiv.style.zIndex = 10;
 dateDiv.style.font = "bold 20px 'Happiness-Sans-Regular', sans-serif";
-dateDiv.style.color = '#aebab8';
+dateDiv.style.color = 'var(--color-accent)';
 dateDiv.style.pointerEvents = 'none';
-dateDiv.style.transition = 'left 0.3s, top 0.3s, clip-path 0.3s';
+dateDiv.style.transition = 'opacity 0.4s, left 0.3s, top 0.3s, clip-path 0.3s';
+dateDiv.style.opacity = '0';
 dateDiv.style.whiteSpace = 'nowrap';
 dateDiv.style.userSelect = 'none';
 dateDiv.style.padding = '5px 20px';
@@ -62,6 +61,12 @@ setInterval(moveDateDivToMask, 500);
 window.addEventListener('resize', moveDateDivToMask);
 // 최초 1회 위치 갱신
 moveDateDivToMask();
+
+// 노출 애니메이션 함수
+function fadeInDateDiv() {
+  dateDiv.style.opacity = '1';
+}
+window.fadeInDate = fadeInDateDiv;
 // center-text 숨김
 var centerTextDiv = document.getElementById('center-text');
 if (centerTextDiv) centerTextDiv.style.display = 'none'; 
