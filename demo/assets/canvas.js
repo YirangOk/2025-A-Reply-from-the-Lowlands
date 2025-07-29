@@ -42,7 +42,7 @@
         width: window.innerWidth,
         height: window.innerHeight,
         wireframes: false,
-        background: 'transparent' // 완전 투명
+        background: 'linear-gradient(to bottom,rgb(51, 0, 255) 0%,rgb(0, 234, 255) 60%, #f0f8ff 70%, #ffffff 75%, #202020 90%, #000000 100%)'
       }
     });
 
@@ -61,24 +61,24 @@
         Bodies.rectangle(w/2, window.innerHeight, w, 20, {
           isStatic: true,
           render: {
-            fillStyle: '#d5dedd',
-            strokeStyle: '#d5dedd',
+            fillStyle: '#000000',
+            strokeStyle: '#000000',
             lineWidth: 2
           }
         }), // 하단
         Bodies.rectangle(w, window.innerHeight / 2, 20, window.innerHeight, {
           isStatic: true,
           render: {
-            fillStyle: '#d5dedd',
-            strokeStyle: '#d5dedd',
+            fillStyle: '#000000',
+            strokeStyle: '#000000',
             lineWidth: 2
           }
         }), // 우측
         Bodies.rectangle(0, window.innerHeight / 2, 20, window.innerHeight, {
           isStatic: true,
           render: {
-            fillStyle: '#d5dedd',
-            strokeStyle: '#d5dedd',
+            fillStyle: '#000000',
+            strokeStyle: '#000000',
             lineWidth: 2
           }
         }) // 좌측
@@ -95,7 +95,7 @@
       // 글자 크기 측정
       var tempCanvas = document.createElement('canvas');
       var ctx = tempCanvas.getContext('2d');
-      ctx.font = '600 23px "Happiness-Sans-Regular", sans-serif';
+      ctx.font = '600 23px "Tasan-Regular", sans-serif';
       var textWidth = ctx.measureText(word).width; // 패딩 없음
       var textHeight = 23; // 폰트 사이즈와 동일
       var canvasWidth = window.innerWidth;
@@ -117,6 +117,28 @@
       body.textHeight = textHeight;
       body.wordColor = color;
       body.fontSize = 23;
+      return body;
+    }
+
+    // macOS window block (white background with traffic light buttons)
+    function createWindowBlock() {
+      const w = Common.random(50, 200);
+      const h = Common.random(20, 200);
+      const x = Common.random(w / 2 + 10, window.innerWidth - w / 2 - 10);
+      const y = -h;
+      const body = Bodies.rectangle(x, y, w, h, {
+        restitution: 0.9,
+        friction: 0.005,
+        density: 0.001,
+        render: {
+          fillStyle: 'rgba(0,0,0,0)',
+          strokeStyle: 'rgba(0,0,0,0)',
+          lineWidth: 0
+        }
+      });
+      body.isWindow = true;
+      body.winWidth = w;
+      body.winHeight = h;
       return body;
     }
 
@@ -173,9 +195,15 @@
     var spawnIntervalId = null;
 
     function spawnNextWordBlock() {
-      var word = getNextWord();
-      if (!word) return;
-      var block = createWordBlock(word);
+      var makeWindow = Math.random() < 0.05; // 1/20 probability
+      var block;
+      if (makeWindow) {
+        block = createWindowBlock();
+      } else {
+        var word = getNextWord();
+        if (!word) return;
+        block = createWordBlock(word);
+      }
       rects.push(block);
       World.add(world, block);
       // rects 배열이 너무 커지면 오래된 블록을 제거해 메모리 누수 방지 (선택사항)
@@ -219,12 +247,39 @@
           ctx.rotate(angle);
 
           // 글자
-          ctx.font = `600 ${body.fontSize}px 'Happiness-Sans-Regular', sans-serif`;
+          ctx.font = `600 ${body.fontSize}px 'Tasan-Regular', sans-serif`;
           ctx.fillStyle = body.wordColor || "#aebab8";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(body.word, 0, 0);
 
+          ctx.restore();
+        } else if (body.isWindow) {
+          var pos = body.position;
+          var angle = body.angle;
+          var ctx = render.context;
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.rotate(angle);
+          // main window rectangle
+          ctx.fillStyle = '#000000';
+          ctx.strokeStyle = '#333333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.rect(-body.winWidth/2, -body.winHeight/2, body.winWidth, body.winHeight);
+          ctx.fill();
+          ctx.stroke();
+          // traffic light buttons
+          var btnY = -body.winHeight/2 + 12;
+          var startX = -body.winWidth/2 + 16;
+          var radius = 6;
+          var colors = ['#ff605c', '#ffbd44', '#00ca4e'];
+          for (var i=0;i<3;i++) {
+            ctx.beginPath();
+            ctx.fillStyle = colors[i];
+            ctx.arc(startX + i*18, btnY, radius, 0, Math.PI*2);
+            ctx.fill();
+          }
           ctx.restore();
         }
       });
@@ -247,6 +302,52 @@
           a.textWidth *= scale;
           a.textHeight *= scale;
           a.fontSize = Math.round(a.fontSize * scale);
+        }
+      });
+    });
+
+    render.canvas.addEventListener('click', function(event){
+      var rect = render.canvas.getBoundingClientRect();
+      var mouseX = event.clientX - rect.left;
+      var mouseY = event.clientY - rect.top;
+      // iterate over window blocks
+      rects.slice().forEach(function(body){
+        if(!body.isWindow) return;
+        // transform point to body local coordinates considering rotation
+        var cos = Math.cos(-body.angle);
+        var sin = Math.sin(-body.angle);
+        var dx = mouseX - body.position.x;
+        var dy = mouseY - body.position.y;
+        var localX = dx * cos - dy * sin;
+        var localY = dx * sin + dy * cos;
+        // check within window bounds
+        if(localX >= -body.winWidth/2 && localX <= body.winWidth/2 && localY >= -body.winHeight/2 && localY <= body.winHeight/2){
+          // check buttons
+          var btnY = -body.winHeight/2 + 12;
+          var startX = -body.winWidth/2 + 16;
+          var radius = 6;
+          for(var i=0;i<3;i++){
+            var bx = startX + i*18;
+            var by = btnY;
+            var dist = Math.hypot(localX-bx, localY-by);
+            if(dist <= radius){
+              if(i===0){ // red remove
+                World.remove(world, body);
+                rects = rects.filter(function(b){return b!==body;});
+              } else if(i===1){ // yellow shrink 0.9
+                var scale=0.9;
+                Matter.Body.scale(body, scale, scale);
+                body.winWidth *= scale;
+                body.winHeight *= scale;
+              } else if(i===2){ // green enlarge 1.1
+                var scale=1.1;
+                Matter.Body.scale(body, scale, scale);
+                body.winWidth *= scale;
+                body.winHeight *= scale;
+              }
+              event.stopPropagation();
+            }
+          }
         }
       });
     });

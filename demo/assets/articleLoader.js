@@ -40,6 +40,10 @@ function nextArticle() {
     clip.style.overflowWrap = 'break-word';
   }
   window.currentTitleWords = art.title.split(/\s+/);
+  if(window.setTitleFollow) window.setTitleFollow(art.title);
+  if(window.setDateFromString) window.setDateFromString(art.dateTime.split(',')[0]);
+  if(window.setLinkText) window.setLinkText(art.url||'');
+  if(window.fadeInLink) window.fadeInLink();
 
   const sidebar = document.getElementById('article-list');
   if (sidebar) {
@@ -52,7 +56,7 @@ function nextArticle() {
     item.style.top = randTop + 'px';
 
     // random horizontal offset within 0-100px from right edge
-    const randRight = Math.floor(Math.random()*200);
+    const randRight = Math.floor(Math.random()*window.innerWidth);
     item.style.right = randRight + 'px';
 
     // macOS style window bar
@@ -87,6 +91,12 @@ function nextArticle() {
     item.appendChild(meta);
 
     sidebar.appendChild(item);
+
+    // auto fade after 10s
+    setTimeout(function(){
+      item.style.opacity='0';
+      setTimeout(function(){ item.style.display='none'; }, 1000);
+    }, 10000);
 
     // add button behaviors
     red.addEventListener('click', function(e){

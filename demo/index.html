@@ -43,6 +43,7 @@
   <div id="menu-bar"><span id="menu-about">About</span></div>
   <div id="restart-overlay">Restart</div>
   <div id="press-overlay">Press</div>
+  <div id="keep-press-overlay" style="display:none;">Keep Press</div>
   <div id="center-text">2024-12-03,22:27</div>
   <div class="clip-bg" id="clip-bg">
     <div class="clip-text" id="clip-text">
@@ -58,14 +59,35 @@
   <script>
     // Press overlay fade out on first interaction
     var pressOverlay = document.getElementById('press-overlay');
+    var keepPressOverlay = document.getElementById('keep-press-overlay');
+    var keepPressTimeout = null;
+    var pressHidden = false;
+
+    function scheduleKeepPress() {
+      if (!keepPressOverlay || !pressHidden) return;
+      clearTimeout(keepPressTimeout);
+      keepPressTimeout = setTimeout(function () {
+        keepPressOverlay.style.display = 'block';
+        if (pressOverlay) pressOverlay.style.display = 'none';
+      }, 2000);
+    }
+
+    function hideKeepPress() {
+      if (!keepPressOverlay || !pressHidden) return;
+      clearTimeout(keepPressTimeout);
+      keepPressOverlay.style.display = 'none';
+    }
+
     if (pressOverlay) {
       var hidePressOverlay = function () {
         pressOverlay.classList.add('fade-out');
         if (window.fadeInDate) window.fadeInDate();
         setTimeout(function () {
           pressOverlay.style.display = 'none';
+          pressHidden = true;
         }, 200);
         document.body.removeEventListener('mousedown', hidePressOverlay);
+        scheduleKeepPress();
       };
       document.body.addEventListener('mousedown', hidePressOverlay);
     }
@@ -81,18 +103,24 @@
         if (window.addOneDay) window.addOneDay();
         if (window.nextArticle) window.nextArticle();
       }, 500);
+
+      hideKeepPress();
     });
     document.body.addEventListener('mouseup', function (e) {
       if (e.target.closest('#article-list')) return;
       if (window.stopClipShake) window.stopClipShake();
       clearInterval(pressIntervalId);
       pressIntervalId = null;
+
+      scheduleKeepPress();
     });
     document.body.addEventListener('mouseleave', function (e) {
       if (e.target.closest('#article-list')) return;
       if (window.stopClipShake) window.stopClipShake();
       clearInterval(pressIntervalId);
       pressIntervalId = null;
+
+      scheduleKeepPress();
     });
 
     // ------------------ Inactivity Restart ------------------

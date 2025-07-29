@@ -5,20 +5,31 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "Tasan-Regular";
+    src: url("./fonts/Tasan Regular.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
     --color-bg: #d5dedd;
-    --color-accent: #aebab8;
+    --color-accent: #ff7300;
+    --color-basic: #aebab8;
     --color-text-dark: #222;
 }
 
 body {
-    font-family: "Happiness-Sans-Regular", sans-serif;
+    font-family: "Tasan-Regular", sans-serif;
     font-weight: 100;
     font-style: normal;
     letter-spacing: -0.02em;
     margin: 0;
     padding: 0;
-    background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #ffffff 70%, #ffffff 80%, #000000 80%, #000000 100%);
+    background: linear-gradient(to bottom, #00b7ff 0%, #87CEEB 60%, #f0f8ff 70%, #ffffff 75%, #202020 90%, #000000 100%);
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
 }
 
@@ -27,7 +38,7 @@ canvas {
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 3;
+    z-index: 0;
     pointer-events: auto;
 }
 
@@ -42,44 +53,11 @@ canvas {
     pointer-events: auto;
     z-index: 10;
     user-select: none;
-    transition: left 0.5s, top 0.5s, transform 0.5s;
+    transition: left 1.5s, top 1.5s, transform 1.5s;
 }
 
-.eye-container {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 20;
-    pointer-events: none;
-}
 
-#eye-left {
-    left: 0;
-}
-
-#eye-right {
-    right: 0;
-}
-
-.eye {
-    position: fixed;
-    top: 50%;
-    width: 320px;
-    height: 260px;
-    transform: translateY(-50%);
-    z-index: 20;
-    pointer-events: none;
-}
-
-.eye-left {
-    left: 0;
-}
-
-.eye-right {
-    right: 0;
-}
-
-.eye-outline {
+/* .eye-outline {
     position: absolute;
     left: 0;
     top: 0;
@@ -88,7 +66,7 @@ canvas {
     border-radius: 50% / 45%;
     border: 18px solid var(--color-accent);
     box-sizing: border-box;
-}
+} */
 
 .eye-pupil {
     position: absolute;
@@ -123,7 +101,7 @@ canvas {
     height: 12px;
     left: 180px;
     top: 200px;
-    opacity: 0.5;
+    opacity: 1.5;
 }
 
 .eye-left .dot3,
@@ -132,7 +110,7 @@ canvas {
     height: 8px;
     left: 220px;
     top: 60px;
-    opacity: 0.5;
+    opacity: 1.5;
 }
 
 .clip-text-container {
@@ -152,16 +130,27 @@ canvas {
 .clip-text {
     position: absolute;
     top: 0;
-    font-size: 13vw;
+    font-size: 10vw;
+    line-height: 13vw;
     font-weight: bold;
     color: var(--color-accent);
+    /* outer stroke effect using multi-direction text-shadow */
+    text-shadow:
+        -10px 0 0 #000,
+        10px 0 0 #000,
+        0 -10px 0 #000,
+        0 10px 0 #000,
+        -7px -7px 0 #000,
+        -7px 7px 0 #000,
+        7px -7px 0 #000,
+        7px 7px 0 #000;
     text-align: left;
     word-break: keep-all;
     overflow-wrap: break-word;
     line-height: 1-vw;
     max-width: 90vw;
     z-index: 2;
-    font-family: "Happiness-Sans-Regular", sans-serif;
+    font-family: "Tasan-Regular", sans-serif;
     white-space: normal !important;
     overflow-wrap: anywhere;
     /* CSS3 권장 */
@@ -192,7 +181,7 @@ canvas {
     z-index: 1;
     clip-path: circle(20vw at 50vw 50vh);
     -webkit-clip-path: circle(20vw at 50vw 50vh);
-    transition: clip-path 0.3s;
+    transition: clip-path 1s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -215,9 +204,9 @@ canvas {
     overflow: visible;
     padding: 2rem;
     box-sizing: border-box;
-    font-family: "Happiness-Sans-Regular", sans-serif;
+    font-family: "Tasan-Regular", sans-serif;
     font-size: 14px;
-    color: var(--color-accent);
+    color: var(--color-basic);
     /* background: var(--color-bg); */
     line-height: 1.4;
     z-index: 5;
@@ -230,13 +219,15 @@ canvas {
     right: 0;
     width: 240px;
     background: var(--color-bg);
-    border: 1px solid var(--color-accent);
+    border: 1px solid var(--color-basic);
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     padding: 26px 10px 10px 10px;
     /* leave space for window bar */
     pointer-events: auto;
     z-index: 6;
+    opacity: 1;
+    transition: opacity 1.5s ease;
 }
 
 /* macOS style traffic light buttons */
@@ -281,7 +272,7 @@ canvas {
 
 .article-item .meta {
     font-size: 12px;
-    color: var(--color-accent);
+    color: var(--color-basic);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -297,17 +288,27 @@ canvas {
 
 /* ------------------------------------------------------------------ */
 /* Press overlay styles moved from index.html */
-#press-overlay {
+#press-overlay,
+#keep-press-overlay {
     position: fixed;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
     font-size: 4rem;
     font-weight: bold;
-    color: var(--color-accent);
+    color: var(--color-basic);
     z-index: 20;
     pointer-events: none;
     animation: press-blink 1s steps(2, start) infinite;
+    text-shadow:
+        -10px 0 0 #000,
+        10px 0 0 #000,
+        0 -10px 0 #000,
+        0 10px 0 #000,
+        -7px -7px 0 #000,
+        -7px 7px 0 #000,
+        7px -7px 0 #000,
+        7px 7px 0 #000;
 }
 
 @keyframes press-blink {
@@ -331,6 +332,20 @@ canvas {
     to {
         opacity: 0;
     }
+}
+
+@keyframes flash-bright {
+    0% {
+        filter: brightness(4);
+    }
+
+    100% {
+        filter: brightness(1);
+    }
+}
+
+.flash-bright {
+    animation: flash-bright 0.3s ease;
 }
 
 /* ------------------------------------------------------------------ */
@@ -390,3 +405,24 @@ canvas {
 }
 
 /* ------------------------------------------------------------------ */
+/* Title follow box */
+#title-follow {
+    position: fixed;
+    z-index: 12;
+    background: transparent;
+    color: #fff;
+    padding: 4px 6px;
+    font: bold 22px "Tasan-Regular", sans-serif;
+    max-width: 100px;
+    word-break: break-all;
+    pointer-events: none;
+    transition: left 1.5s ease, top 1.5s ease;
+    text-decoration: underline;
+    text-decoration-color: #000;
+    text-decoration-thickness: 28px;
+    text-underline-offset: -21px;
+}
+
+#link-circle {
+    word-break: break-all;
+}

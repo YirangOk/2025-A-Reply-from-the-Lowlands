@@ -46,7 +46,7 @@ function startClipShake() {
     lastMask.x = Math.random() * (maxX - minX) + minX;
     lastMask.y = Math.random() * (maxY - minY) + minY;
     setClipMaskPos(lastMask);
-  }, 200);
+  }, 500);
 }
 function stopClipShake() {
   clearInterval(shakeInterval);
