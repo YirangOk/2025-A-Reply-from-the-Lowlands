@@ -215,7 +215,7 @@
 
     function startSpawningRects() {
       if (spawnIntervalId) return;
-      spawnIntervalId = setInterval(spawnNextWordBlock, 100);
+      spawnIntervalId = setInterval(spawnNextWordBlock, 500);
     }
 
     function stopSpawningRects() {
