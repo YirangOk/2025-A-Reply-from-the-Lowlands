@@ -28,6 +28,12 @@ fetch(csvPath)
 function nextArticle() {
   if (!articles.length) return;
   articleIndex = (articleIndex + 1) % articles.length;
+  
+  // Log when we complete a full cycle
+  if (articleIndex === 0) {
+    console.log('Completed full cycle of articles, starting over from the beginning');
+  }
+  
   const art = articles[articleIndex];
   const clip = document.getElementById('clip-text');
   if (clip) {
@@ -121,6 +127,90 @@ function nextArticle() {
 }
 
 window.nextArticle = nextArticle;
+
+// Function to create article item without changing the current article
+function createArticleItem() {
+  if (!articles.length) return;
+  const art = articles[articleIndex];
+  
+  const sidebar = document.getElementById('article-list');
+  if (sidebar) {
+    const item = document.createElement('div');
+    item.className = 'article-item';
+
+    // position randomly along vertical axis within viewport
+    const maxTop = window.innerHeight - 220; // approximate height of card
+    const randTop = Math.floor(Math.random() * maxTop);
+    item.style.top = randTop + 'px';
+
+    // random horizontal offset within 0-100px from right edge
+    const randRight = Math.floor(Math.random()*window.innerWidth);
+    item.style.right = randRight + 'px';
+
+    // macOS style window bar
+    const bar = document.createElement('div');
+    bar.className = 'window-bar';
+    const red = document.createElement('span'); red.className='win-btn red';
+    const yellow = document.createElement('span'); yellow.className='win-btn yellow';
+    const green = document.createElement('span'); green.className='win-btn green';
+    bar.appendChild(red); bar.appendChild(yellow); bar.appendChild(green);
+    item.appendChild(bar);
+
+    const h4 = document.createElement('h4');
+    h4.textContent = art.title;
+    item.appendChild(h4);
+
+    const sum = document.createElement('div');
+    sum.className = 'summary';
+    sum.textContent = art.summary;
+    item.appendChild(sum);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = art.dateTime;
+
+    if (art.url) {
+      const linkSpan = document.createElement('span');
+      linkSpan.className = 'article-link';
+      linkSpan.textContent = `  (${art.url})`;
+      meta.appendChild(linkSpan);
+    }
+
+    item.appendChild(meta);
+
+    sidebar.appendChild(item);
+
+    // auto fade after 10s
+    setTimeout(function(){
+      item.style.opacity='0';
+      setTimeout(function(){ item.style.display='none'; }, 1000);
+    }, 10000);
+
+    // add button behaviors
+    red.addEventListener('click', function(e){
+      e.stopPropagation();
+      item.remove();
+    });
+    green.addEventListener('click', function(e){
+      e.stopPropagation();
+      let cur = parseFloat(item.dataset.scale || '1');
+      cur *= 1.1;
+      item.dataset.scale = cur;
+      item.style.transform = `scale(${cur})`;
+    });
+    yellow.addEventListener('click', function(e){
+      e.stopPropagation();
+      let cur = parseFloat(item.dataset.scale || '1');
+      cur *= 0.9;
+      item.dataset.scale = cur;
+      item.style.transform = `scale(${cur})`;
+    });
+  }
+}
+
+// Expose createArticleItem globally
+window.createArticleItem = createArticleItem;
+
 // provide initial words when CSV loaded
 fetch(csvPath)
   .then(resp => resp.text())

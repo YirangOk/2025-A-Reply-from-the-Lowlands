@@ -10,6 +10,7 @@
     src: url("./fonts/Tasan Regular.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 :root {
@@ -258,6 +259,10 @@ canvas {
     background: #00ca4e;
 }
 
+.article-item {
+    word-break: break-all;
+}
+
 .article-item h4 {
     margin: 0 0 4px 0;
     font-size: 16px;
@@ -281,7 +286,7 @@ canvas {
 .article-link {
     font-size: 11px;
     font-style: italic;
-    color: var(--color-text-dark);
+    color: var(--color-basic);
     pointer-events: none;
     margin-left: 4px;
 }
@@ -296,6 +301,7 @@ canvas {
     transform: translate(-50%, -50%);
     font-size: 4rem;
     font-weight: bold;
+    font-family: "Tasan-Regular", sans-serif;
     color: var(--color-basic);
     z-index: 20;
     pointer-events: none;
@@ -309,6 +315,8 @@ canvas {
         -7px 7px 0 #000,
         7px -7px 0 #000,
         7px 7px 0 #000;
+    text-align: center;
+    line-height: 1.2;
 }
 
 @keyframes press-blink {
@@ -425,4 +433,16 @@ canvas {
 
 #link-circle {
     word-break: break-all;
+}
+
+/* ------------------------------------------------------------------ */
+/* Text Selection Styles */
+::selection {
+    background-color: #0066cc;
+    color: white;
+}
+
+::-moz-selection {
+    background-color: #0066cc;
+    color: white;
 }

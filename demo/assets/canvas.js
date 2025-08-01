@@ -212,11 +212,41 @@
         World.remove(world, old);
       }
     }
+    
+    // Enhanced spawning function for press events
+    function spawnMultipleBlocks() {
+      var count = Math.floor(Math.random() * 5) + 5; // 5-9 blocks at once (much more!)
+      for (var i = 0; i < count; i++) {
+        setTimeout(function() {
+          spawnNextWordBlock();
+        }, i * 50); // Faster stagger (50ms instead of 100ms)
+      }
+    }
 
     function startSpawningRects() {
       if (spawnIntervalId) return;
-      spawnIntervalId = setInterval(spawnNextWordBlock, 500);
+      updateSpawnInterval();
     }
+    
+    function updateSpawnInterval() {
+      if (spawnIntervalId) {
+        clearInterval(spawnIntervalId);
+      }
+      var speedMultiplier = window.speedMultiplier || 0.5;
+      var isPressed = window.isPressed || false;
+      
+      if (isPressed) {
+        // When pressed: spawn multiple blocks quickly
+        spawnIntervalId = setInterval(spawnMultipleBlocks, 600 / speedMultiplier); // Faster interval
+      } else {
+        // Normal state: spawn single blocks slowly
+        var baseInterval = 2000; // Slightly faster for normal state to ensure visibility
+        spawnIntervalId = setInterval(spawnNextWordBlock, baseInterval / speedMultiplier);
+      }
+    }
+    
+    // Expose updateSpawnInterval globally
+    window.updateSpawnInterval = updateSpawnInterval;
 
     function stopSpawningRects() {
       clearInterval(spawnIntervalId);
@@ -351,3 +381,14 @@
         }
       });
     });
+
+    // Auto-start canvas interactions after a short delay
+    setTimeout(function() {
+      startSpawningRects();
+      // Force initial spawn to ensure blocks start appearing
+      spawnNextWordBlock();
+    }, 2000);
+    
+    // Expose functions globally for external access
+    window.spawnMultipleBlocks = spawnMultipleBlocks;
+    window.spawnNextWordBlock = spawnNextWordBlock;

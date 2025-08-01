@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Matter.js Ball Pool Demo</title>
+  <title>낮은 땅으로부터의 회신</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <link rel="stylesheet" href="./assets/style.css">
   <!-- Styles moved to assets/style.css -->
@@ -40,10 +40,10 @@
 </script>
 
 <body>
-  <div id="menu-bar"><span id="menu-about">About</span></div>
+  <div id="menu-bar"></div>
   <div id="restart-overlay">Restart</div>
-  <div id="press-overlay">Press</div>
-  <div id="keep-press-overlay" style="display:none;">Keep Press</div>
+  <div id="press-overlay" style="display:none;">길게 누르기<br>Press</div>
+  <div id="keep-press-overlay" style="display:none;">게속 누르기<br>Keep Press</div>
   <div id="center-text">2024-12-03,22:27</div>
   <div class="clip-bg" id="clip-bg">
     <div class="clip-text" id="clip-text">
@@ -57,44 +57,103 @@
   <script src="./assets/datePhysics.js"></script>
   <script src="./assets/articleLoader.js"></script>
   <script>
-    // Press overlay fade out on first interaction
+    // Press overlay shows on every click
     var pressOverlay = document.getElementById('press-overlay');
     var keepPressOverlay = document.getElementById('keep-press-overlay');
     var keepPressTimeout = null;
-    var pressHidden = false;
+    
+    // Speed control system
+    var speedMultiplier = 1.0; // Normal speed
+    var isPressed = false;
+    var lastInteractionTime = Date.now();
+    var speedUpdateInterval = null;
+    
+    // Speed levels
+    var SPEED_LEVELS = {
+      IDLE: 0.1,      // Very slow when no interaction
+      PRESSED: 1.0,   // Normal speed when pressed
+      NORMAL: 0.5     // 1/2 speed normally
+    };
+    
+    function updateSpeed() {
+      var now = Date.now();
+      var timeSinceInteraction = now - lastInteractionTime;
+      
+      if (isPressed) {
+        speedMultiplier = SPEED_LEVELS.PRESSED; // Normal speed when pressed
+      } else if (timeSinceInteraction > 5000) { // 5 seconds of no interaction
+        speedMultiplier = SPEED_LEVELS.IDLE;    // Very slow when idle
+      } else {
+        speedMultiplier = SPEED_LEVELS.NORMAL;  // 1/2 speed normally
+      }
+      
+      // Expose speedMultiplier and isPressed globally for other scripts
+      window.speedMultiplier = speedMultiplier;
+      window.isPressed = isPressed;
+      
+      // Update Matter.js engine speed
+      if (window.engine && window.engine.timing) {
+        window.engine.timing.timeScale = speedMultiplier;
+      }
+      
+      // Update interval speeds
+      if (pressIntervalId) {
+        clearInterval(pressIntervalId);
+        pressIntervalId = setInterval(function () {
+          if (window.addOneDay) window.addOneDay();
+          if (window.nextArticle) window.nextArticle();
+        }, 1000 / speedMultiplier);
+      }
+      
+      // Update spawn interval if it exists
+      if (window.updateSpawnInterval) {
+        window.updateSpawnInterval();
+      }
+      
+      // Create article item when pressed
+      if (window.createArticleItem && isPressed) {
+        window.createArticleItem();
+      }
+    }
+    
+    function resetInteractionTimer() {
+      lastInteractionTime = Date.now();
+      updateSpeed();
+    }
+
+    function showPressOverlay() {
+      // Don't show overlays during automatic playback
+      return;
+    }
+
+    function hidePressOverlay() {
+      if (pressOverlay) {
+        pressOverlay.classList.add('fade-out');
+        setTimeout(function () {
+          pressOverlay.style.display = 'none';
+        }, 200);
+      }
+    }
 
     function scheduleKeepPress() {
-      if (!keepPressOverlay || !pressHidden) return;
-      clearTimeout(keepPressTimeout);
-      keepPressTimeout = setTimeout(function () {
-        keepPressOverlay.style.display = 'block';
-        if (pressOverlay) pressOverlay.style.display = 'none';
-      }, 2000);
+      // Don't show keep press overlay during automatic playback
+      return;
     }
 
     function hideKeepPress() {
-      if (!keepPressOverlay || !pressHidden) return;
+      if (!keepPressOverlay) return;
       clearTimeout(keepPressTimeout);
       keepPressOverlay.style.display = 'none';
-    }
-
-    if (pressOverlay) {
-      var hidePressOverlay = function () {
-        pressOverlay.classList.add('fade-out');
-        if (window.fadeInDate) window.fadeInDate();
-        setTimeout(function () {
-          pressOverlay.style.display = 'none';
-          pressHidden = true;
-        }, 200);
-        document.body.removeEventListener('mousedown', hidePressOverlay);
-        scheduleKeepPress();
-      };
-      document.body.addEventListener('mousedown', hidePressOverlay);
     }
     // 날짜와 클리핑 마스크 인터랙션 + 기사 변경
     var pressIntervalId = null;
     document.body.addEventListener('mousedown', function (e) {
       if (e.target.closest('#article-list')) return; // ignore clicks in sidebar
+      
+      // Set pressed state and update speed
+      isPressed = true;
+      resetInteractionTimer();
+      
       if (window.startClipShake) window.startClipShake();
       if (window.addOneDay) window.addOneDay();
       if (window.nextArticle) window.nextArticle();
@@ -102,9 +161,7 @@
       pressIntervalId = setInterval(function () {
         if (window.addOneDay) window.addOneDay();
         if (window.nextArticle) window.nextArticle();
-      }, 1500);
-
-      hideKeepPress();
+      }, 1000 / speedMultiplier);
     });
     document.body.addEventListener('mouseup', function (e) {
       if (e.target.closest('#article-list')) return;
@@ -112,7 +169,9 @@
       clearInterval(pressIntervalId);
       pressIntervalId = null;
 
-      scheduleKeepPress();
+      // Reset pressed state and update speed
+      isPressed = false;
+      resetInteractionTimer();
     });
     document.body.addEventListener('mouseleave', function (e) {
       if (e.target.closest('#article-list')) return;
@@ -120,60 +179,73 @@
       clearInterval(pressIntervalId);
       pressIntervalId = null;
 
-      scheduleKeepPress();
+      // Reset pressed state and update speed
+      isPressed = false;
+      resetInteractionTimer();
     });
 
-    // ------------------ Inactivity Restart ------------------
+    // ------------------ Auto Refresh on Inactivity ------------------
     (function () {
-      var restartOverlay = document.getElementById('restart-overlay');
-
-      function showRestart() {
-        restartOverlay.style.display = 'block';
-      }
-
       function resetTimer() {
-        restartOverlay.style.display = 'none';
         clearTimeout(window.__idleTimer);
-        window.__idleTimer = setTimeout(showRestart, 30 * 60 * 1000);
+        window.__idleTimer = setTimeout(function() {
+          location.reload();
+        }, 2 * 60 * 1000); // 2 minutes
       }
       ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(function (ev) {
         document.addEventListener(ev, resetTimer, {
           passive: true
         });
+        document.addEventListener(ev, resetInteractionTimer, {
+          passive: true
+        });
       });
       resetTimer();
-      restartOverlay.addEventListener('click', function () {
-        location.reload();
-      });
     })();
 
-    // ------------------ About Window ------------------
+    // ------------------ Continuous Speed Update ------------------
     (function () {
-      var aboutBtn = document.getElementById('menu-about');
-      if (!aboutBtn) return;
-      aboutBtn.addEventListener('click', function () {
-        if (document.getElementById('about-window')) return;
-        var aw = document.createElement('div');
-        aw.id = 'about-window';
-        aw.className = 'about-window';
-        aw.innerHTML =
-          `<div class="window-bar"><span class="win-btn red"></span><span class="win-btn yellow"></span><span class="win-btn green"></span></div><div class="about-content"><h2>About</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p><p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p></div>`;
-        document.body.appendChild(aw);
-        aw.querySelector('.win-btn.red').addEventListener('click', function (e) {
-          e.stopPropagation();
-          aw.remove();
-        });
-        aw.querySelector('.win-btn.yellow').addEventListener('click', function (e) {
-          e.stopPropagation();
-          aw.style.display = 'none';
-        });
-        aw.querySelector('.win-btn.green').addEventListener('click', function (e) {
-          e.stopPropagation();
-          aw.style.display = 'block';
-        });
-      });
+      // Update speed every 100ms
+      speedUpdateInterval = setInterval(function() {
+        updateSpeed();
+      }, 100);
+      
+      // Initial speed update
+      updateSpeed();
     })();
-    // ----------------------------------------------------
+
+    // ------------------ Auto Start Playback ------------------
+    (function () {
+      // Wait for all scripts to load, then start automatic playback
+      setTimeout(function() {
+        // Start automatic date and article progression
+        if (window.addOneDay) window.addOneDay();
+        if (window.nextArticle) window.nextArticle();
+        
+        // Start automatic interval for continuous progression (slower by default)
+        setInterval(function () {
+          if (window.addOneDay) window.addOneDay();
+          if (window.nextArticle) window.nextArticle();
+        }, 4000); // Every 4 seconds (slower than original 2 seconds)
+        
+        // Start canvas interactions if available
+        if (window.startSpawningRects) window.startSpawningRects();
+        // Force initial spawn to ensure blocks start appearing
+        if (window.spawnNextWordBlock) window.spawnNextWordBlock();
+        
+        // Start clip mask shake to reveal the clipping mask
+        if (window.startClipShake) window.startClipShake();
+        
+        // Show date and link elements
+        if (window.fadeInDate) window.fadeInDate();
+        if (window.fadeInLink) window.fadeInLink();
+        
+        // Trigger initial interactions
+        resetInteractionTimer();
+      }, 1000); // Wait 1 second for everything to load
+    })();
+
+
   </script>
 </body>
 
