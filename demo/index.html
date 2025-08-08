@@ -109,11 +109,6 @@
       if (window.updateSpawnInterval) {
         window.updateSpawnInterval();
       }
-      
-      // Create article item when pressed
-      if (window.createArticleItem && isPressed) {
-        window.createArticleItem();
-      }
     }
     
     function resetInteractionTimer() {
@@ -153,6 +148,11 @@
       // Set pressed state and update speed
       isPressed = true;
       resetInteractionTimer();
+      
+      // Create one article item when press starts
+      if (window.createArticleItem) {
+        window.createArticleItem();
+      }
       
       if (window.startClipShake) window.startClipShake();
       if (window.addOneDay) window.addOneDay();
